@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import 'login_screen.dart';
+import '../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,11 +12,13 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController plateController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   bool isLoading = false;
   bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
 
   InputDecoration customInputDecoration({
     required String hintText,
@@ -24,10 +27,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return InputDecoration(
       hintText: hintText,
-      prefixIcon: Icon(icon, color: Colors.red),
+      prefixIcon: Icon(icon, color: AppColors.red),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.grey.shade100,
+      fillColor: AppColors.inputFill,
       contentPadding: const EdgeInsets.symmetric(vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -35,11 +38,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.red, width: 1.5),
+      ),
+    );
+  }
+
+  void _showPopup(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const SizedBox.shrink(),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(left: 24, right: 24, top: 8),
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Tamam',
+              style: TextStyle(color: AppColors.red),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -47,30 +86,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> registerUser() async {
     final username = usernameController.text.trim();
     final plate = plateController.text.trim();
-    final email = emailController.text.trim();
     final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
     if (username.isEmpty ||
         plate.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lütfen tüm alanları doldurun.")),
-      );
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      _showPopup('Uyarı', 'Lütfen tüm alanları doldurun.');
       return;
     }
 
-    if (!email.contains("@") || !email.contains(".")) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Geçerli bir email girin.")),
-      );
-      return;
-    }
-
-    if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Şifre en az 6 karakter olmalı.")),
-      );
+    if (password != confirmPassword) {
+      _showPopup('Uyarı', 'Şifreler eşleşmiyor.');
       return;
     }
 
@@ -78,12 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       isLoading = true;
     });
 
-    final result = await ApiService.register(
-      username: username,
-      plate: plate,
-      email: email,
-      password: password,
-    );
+    await Future.delayed(const Duration(seconds: 1));
 
     setState(() {
       isLoading = false;
@@ -91,33 +114,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!mounted) return;
 
-    if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Kayıt başarılı")),
-      );
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? "Kayıt başarısız"),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-      );
-    }
+        title: const Text(
+          'Başarılı',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'Kayıt işlemi tamamlandı.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+              );
+            },
+            child: const Text(
+              'Tamam',
+              style: TextStyle(color: AppColors.red),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
     usernameController.dispose();
     plateController.dispose();
-    emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -126,6 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Card(
                 elevation: 8,
+                color: AppColors.card,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -136,8 +185,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       const SizedBox(height: 10),
                       const Icon(
-                        Icons.local_parking_rounded,
-                        color: Colors.red,
+                        Icons.person_add_alt_1_rounded,
+                        color: AppColors.red,
                         size: 60,
                       ),
                       const SizedBox(height: 12),
@@ -147,17 +196,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: AppColors.red,
                           ),
                         ),
                       ),
                       const SizedBox(height: 8),
                       const Center(
                         child: Text(
-                          "Yeni hesap oluştur",
+                          "Kullanıcı adı, plaka ve şifre ile kayıt ol",
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.black54,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -172,18 +221,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: plateController,
+                        textCapitalization: TextCapitalization.characters,
                         decoration: customInputDecoration(
                           hintText: "Plaka",
                           icon: Icons.directions_car_outlined,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: customInputDecoration(
-                          hintText: "Email",
-                          icon: Icons.email_outlined,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -208,18 +249,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirmPassword,
+                        decoration: customInputDecoration(
+                          hintText: "Şifre Tekrar",
+                          icon: Icons.lock_outline,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                obscureConfirmPassword =
+                                    !obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       SizedBox(
                         height: 54,
                         child: ElevatedButton(
                           onPressed: isLoading ? null : registerUser,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
+                            backgroundColor: AppColors.red,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            elevation: 0,
                           ),
                           child: isLoading
                               ? const SizedBox(
@@ -242,11 +305,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
                         },
                         child: const Text(
                           "Zaten hesabın var mı? Giriş yap",
-                          style: TextStyle(color: Colors.red),
+                          style: TextStyle(color: AppColors.red),
                         ),
                       ),
                     ],

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import 'home_screen.dart';
+import 'main_navigation.dart';
 import 'register_screen.dart';
+import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,8 +12,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController usernameOrPlateController =
-      TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
@@ -25,10 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return InputDecoration(
       hintText: hintText,
-      prefixIcon: Icon(icon, color: Colors.red),
+      prefixIcon: Icon(icon, color: AppColors.red),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.grey.shade100,
+      fillColor: AppColors.inputFill,
       contentPadding: const EdgeInsets.symmetric(vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -36,20 +36,20 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.red, width: 1.5),
       ),
     );
   }
 
   Future<void> loginUser() async {
-    final usernameOrPlate = usernameOrPlateController.text.trim();
+    final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    if (usernameOrPlate.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Lütfen tüm alanları doldurun.")),
       );
@@ -61,31 +61,34 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final result = await ApiService.login(
-      usernameOrPlate: usernameOrPlate,
+      email: email,
       password: password,
     );
+
+    if (!mounted) return;
 
     setState(() {
       isLoading = false;
     });
 
-    if (!mounted) return;
-
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Giriş başarılı")),
+        SnackBar(
+          content: Text(result['message'] ?? "Giriş başarılı"),
+        ),
       );
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(userData: result),
+          builder: (context) => const MainNavigation(),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] ?? "Giriş başarısız"),
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -93,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    usernameOrPlateController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -101,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -110,6 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Card(
                 elevation: 8,
+                color: AppColors.card,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -121,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 10),
                       const Icon(
                         Icons.local_parking_rounded,
-                        color: Colors.red,
+                        color: AppColors.red,
                         size: 60,
                       ),
                       const SizedBox(height: 12),
@@ -131,26 +135,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: AppColors.red,
                           ),
                         ),
                       ),
                       const SizedBox(height: 8),
                       const Center(
                         child: Text(
-                          "Kullanıcı adı veya plaka ile giriş yap",
+                          "E-posta ile giriş yap",
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.black54,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),
                       const SizedBox(height: 28),
                       TextField(
-                        controller: usernameOrPlateController,
+                        controller: emailController,
                         decoration: customInputDecoration(
-                          hintText: "Kullanıcı Adı veya Plaka",
-                          icon: Icons.person_outline,
+                          hintText: "E-posta",
+                          icon: Icons.email_outlined,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -181,12 +185,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: isLoading ? null : loginUser,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
+                            backgroundColor: AppColors.red,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            elevation: 0,
                           ),
                           child: isLoading
                               ? const SizedBox(
@@ -218,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         child: const Text(
                           "Hesabın yok mu? Kayıt ol",
-                          style: TextStyle(color: Colors.red),
+                          style: TextStyle(color: AppColors.red),
                         ),
                       ),
                     ],
